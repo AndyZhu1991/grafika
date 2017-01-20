@@ -16,10 +16,13 @@
 
 package com.android.grafika;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.app.ListActivity;
 import android.content.Intent;
-import android.util.Log;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -111,6 +114,12 @@ public class MainActivity extends ListActivity {
             "SoftInputSurfaceActivity" },
     };
 
+    private static final String[] PERMISSIONS = {
+            Manifest.permission.CAMERA,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+    };
+
     /**
      * Compares two list items.
      */
@@ -141,6 +150,8 @@ public class MainActivity extends ListActivity {
         if (!cm.isContentCreated(this)) {
             ContentManager.getInstance().createAll(this);
         }
+
+        ActivityCompat.requestPermissions(this, PERMISSIONS, 1);
     }
 
     /**
