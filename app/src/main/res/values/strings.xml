@@ -100,6 +100,11 @@
     <string name="tfcSizeLabel">Size: </string>
     <string name="tfcRotateLabel">Rotate: </string>
 
+    <string name="start">start</string>
+    <string name="duration_in_millis">Duration: %d millis.</string>
+    <string name="start_time_in_millis">start time(millis):</string>
+    <string name="end_time_in_millis">end time(millis):</string>
+
     <!-- for cameraFilter_spinner; match with CameraCaptureActivity constants -->
     <string-array name="cameraFilterNames">
         <item>Normal</item>

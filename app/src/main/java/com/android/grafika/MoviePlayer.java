@@ -161,13 +161,17 @@ public class MoviePlayer {
         mIsStopRequested = true;
     }
 
+    public void play() throws IOException {
+        play(0);
+    }
+
     /**
      * Decodes the video stream, sending frames to the surface.
      * <p>
      * Does not return until video playback is complete, or we get a "stop" signal from
      * frameCallback.
      */
-    public void play() throws IOException {
+    public void play(long startUsec) throws IOException {
         MediaExtractor extractor = null;
         MediaCodec decoder = null;
 
@@ -196,6 +200,9 @@ public class MoviePlayer {
             decoder.configure(format, mOutputSurface, null, 0);
             decoder.start();
 
+            if (startUsec != 0) {
+                extractor.seekTo(startUsec, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
+            }
             doExtract(extractor, trackIndex, decoder, mFrameCallback);
         } catch (Exception e) {
             Log.d("Andy", e.toString());
@@ -422,6 +429,7 @@ public class MoviePlayer {
         private MoviePlayer mPlayer;
         private PlayerFeedback mFeedback;
         private boolean mDoLoop;
+        private long mStartUsec;
         private Thread mThread;
         private LocalHandler mLocalHandler;
 
@@ -446,6 +454,10 @@ public class MoviePlayer {
          */
         public void setLoopMode(boolean loopMode) {
             mDoLoop = loopMode;
+        }
+
+        public void setStartTime(long startUsec) {
+            mStartUsec = startUsec;
         }
 
         /**
@@ -486,7 +498,7 @@ public class MoviePlayer {
         @Override
         public void run() {
             try {
-                mPlayer.play();
+                mPlayer.play(mStartUsec);
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             } finally {

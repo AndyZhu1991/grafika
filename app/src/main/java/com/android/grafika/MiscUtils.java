@@ -54,6 +54,23 @@ public class MiscUtils {
     }
 
     /**
+     * Obtains a list of files that live in the specified directory and match the glob pattern.
+     */
+    public static File[] getFilesReal(File dir, String glob) {
+        String regex = globToRegex(glob);
+        final Pattern pattern = Pattern.compile(regex);
+        File[] result = dir.listFiles(new FilenameFilter() {
+            @Override public boolean accept(File dir, String name) {
+                Matcher matcher = pattern.matcher(name);
+                return matcher.matches();
+            }
+        });
+        Arrays.sort(result);
+
+        return result;
+    }
+
+    /**
      * Converts a filename globbing pattern to a regular expression.
      * <p>
      * The regex is suitable for use by Matcher.matches(), which matches the entire string, so
