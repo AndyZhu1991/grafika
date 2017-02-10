@@ -71,8 +71,9 @@ public class MoviePlayer {
         /**
          * Called immediately before the frame is rendered.
          * @param presentationTimeUsec The desired presentation time, in microseconds.
+         * @return if this frame should be rendered
          */
-        void preRender(long presentationTimeUsec);
+        boolean preRender(long presentationTimeUsec);
 
         /**
          * Called immediately after the frame render call returns.  The frame may not have
@@ -196,6 +197,8 @@ public class MoviePlayer {
             decoder.start();
 
             doExtract(extractor, trackIndex, decoder, mFrameCallback);
+        } catch (Exception e) {
+            Log.d("Andy", e.toString());
         } finally {
             // release everything we grabbed
             if (decoder != null) {
@@ -388,7 +391,7 @@ public class MoviePlayer {
                     // appears on-screen, but we can manage the pace at which we release
                     // the buffers.
                     if (doRender && frameCallback != null) {
-                        frameCallback.preRender(mBufferInfo.presentationTimeUs);
+                        doRender = frameCallback.preRender(mBufferInfo.presentationTimeUs);
                     }
                     decoder.releaseOutputBuffer(decoderStatus, doRender);
                     if (doRender && frameCallback != null) {

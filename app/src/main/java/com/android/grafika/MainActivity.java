@@ -112,6 +112,9 @@ public class MainActivity extends ListActivity {
         { "{~ignore} Software input surface",
             "Exercises bug",
             "SoftInputSurfaceActivity" },
+        { "Transcode video",
+            "Transcode video",
+            "TranscodeActivity" },
     };
 
     private static final String[] PERMISSIONS = {

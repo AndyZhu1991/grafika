@@ -70,15 +70,15 @@ public class TextureMovieEncoder implements Runnable {
     private static final int MSG_QUIT = 5;
 
     // ----- accessed exclusively by encoder thread -----
-    private WindowSurface mInputWindowSurface;
-    private EglCore mEglCore;
-    private FullFrameRect mFullScreen;
-    private int mTextureId;
-    private int mFrameNum;
-    private VideoEncoderCore mVideoEncoder;
+    protected WindowSurface mInputWindowSurface;
+    protected EglCore mEglCore;
+    protected FullFrameRect mFullScreen;
+    protected int mTextureId;
+    protected int mFrameNum;
+    protected VideoEncoderCore mVideoEncoder;
 
     // ----- accessed by multiple threads -----
-    private volatile EncoderHandler mHandler;
+    protected volatile EncoderHandler mHandler;
 
     private Object mReadyFence = new Object();      // guards ready/running
     private boolean mReady;
@@ -258,7 +258,7 @@ public class TextureMovieEncoder implements Runnable {
     /**
      * Handles encoder state change requests.  The handler is created on the encoder thread.
      */
-    private static class EncoderHandler extends Handler {
+    static class EncoderHandler extends Handler {
         private WeakReference<TextureMovieEncoder> mWeakEncoder;
 
         public EncoderHandler(TextureMovieEncoder encoder) {
@@ -322,7 +322,7 @@ public class TextureMovieEncoder implements Runnable {
      * @param transform The texture transform, from SurfaceTexture.
      * @param timestampNanos The frame's timestamp, from SurfaceTexture.
      */
-    private void handleFrameAvailable(float[] transform, long timestampNanos) {
+    protected void handleFrameAvailable(float[] transform, long timestampNanos) {
         if (VERBOSE) Log.d(TAG, "handleFrameAvailable tr=" + transform);
         mVideoEncoder.drainEncoder(false);
         mFullScreen.drawFrame(mTextureId, transform);

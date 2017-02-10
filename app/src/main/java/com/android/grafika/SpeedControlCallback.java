@@ -52,7 +52,7 @@ public class SpeedControlCallback implements MoviePlayer.FrameCallback {
 
     // runs on decode thread
     @Override
-    public void preRender(long presentationTimeUsec) {
+    public boolean preRender(long presentationTimeUsec) {
         // For the first frame, we grab the presentation time from the video
         // and the current monotonic clock time.  For subsequent frames, we
         // sleep for a bit to try to ensure that we're rendering frames at the
@@ -133,6 +133,8 @@ public class SpeedControlCallback implements MoviePlayer.FrameCallback {
             mPrevMonoUsec += frameDelta;
             mPrevPresentUsec += frameDelta;
         }
+
+        return true;
     }
 
     // runs on decode thread
