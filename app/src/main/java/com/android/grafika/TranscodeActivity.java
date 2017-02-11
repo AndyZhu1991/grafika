@@ -25,6 +25,8 @@ import java.util.List;
 public class TranscodeActivity extends Activity implements View.OnClickListener,
         MoviePlayer.PlayerFeedback, OffscreenTextureMovieEncoder.Callback, AdapterView.OnItemSelectedListener {
 
+    private static final String TAG = TranscodeActivity.class.getSimpleName();
+
     private Spinner mSpinner;
     private TextView mDurationText;
     private EditText mStartEdit;
@@ -178,10 +180,10 @@ public class TranscodeActivity extends Activity implements View.OnClickListener,
     @Override
     public void onSwappedBuffer(long pts) {
         synchronized (mCodecLock) {
-            mCodecLock.notify();
             waitForEncode = false;
+            mCodecLock.notify();
         }
-        Log.d("Andy", "Swapped buffer: " + pts);
+        Log.d(TAG, "Swapped buffer: " + pts);
     }
 
     private boolean waitForEncode = false;
@@ -191,29 +193,37 @@ public class TranscodeActivity extends Activity implements View.OnClickListener,
 
         @Override
         public boolean preRender(long presentationTimeUsec) {
-            Log.d("Andy", "Pre-render: " + presentationTimeUsec);
-            boolean needRender = presentationTimeUsec > 0
-                    && presentationTimeUsec >= mStartUsec && presentationTimeUsec < mEndUsec;
-            if (needRender && waitForEncode) {
-                synchronized (mCodecLock) {
+            Log.d(TAG, "Pre-render: " + presentationTimeUsec);
+
+            if (presentationTimeUsec == 0) {
+                return false; // Skip 0, it is not a video frame
+            }
+
+            if (presentationTimeUsec <= mStartUsec) {
+                return false;
+            }
+
+            if (presentationTimeUsec > mEndUsec) {
+                mPlayTask.requestStop();
+                return false;
+            }
+
+            synchronized (mCodecLock) {
+                if (waitForEncode) {
                     try {
                         mCodecLock.wait();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
-                return true;
-            } else if (presentationTimeUsec >= mEndUsec) {
-                mPlayTask.requestStop();
-                return false;
-            } else {
-                return needRender;
+                waitForEncode = true;
             }
+
+            return true;
         }
 
         @Override
         public void postRender() {
-            waitForEncode = true;
         }
 
         @Override
