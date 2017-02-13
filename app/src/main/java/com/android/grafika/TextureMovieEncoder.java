@@ -336,7 +336,7 @@ public class TextureMovieEncoder implements Runnable {
     /**
      * Handles a request to stop encoding.
      */
-    private void handleStopRecording() {
+    protected void handleStopRecording() {
         Log.d(TAG, "handleStopRecording");
         mVideoEncoder.drainEncoder(true);
         releaseEncoder();

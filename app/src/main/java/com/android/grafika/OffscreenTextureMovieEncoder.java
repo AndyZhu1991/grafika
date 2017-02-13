@@ -10,6 +10,8 @@ public class OffscreenTextureMovieEncoder extends TextureMovieEncoder implements
 
     private Callback mCallback;
 
+    private long mIncomingFramePts;
+
     public SurfaceTexture createSurfaceTexture() {
         final SurfaceTexture[] surfaceTexture = {null};
         final Object object = new Object();
@@ -42,7 +44,21 @@ public class OffscreenTextureMovieEncoder extends TextureMovieEncoder implements
     @Override
     protected void handleFrameAvailable(float[] transform, long timestampNanos) {
         super.handleFrameAvailable(transform, timestampNanos);
-        mCallback.onSwappedBuffer(timestampNanos / 1000);
+        if (mCallback != null) {
+            mCallback.onSwappedBuffer(timestampNanos / 1000);
+        }
+    }
+
+    @Override
+    protected void handleStopRecording() {
+        super.handleStopRecording();
+        if (mCallback != null) {
+            mCallback.onEncodeStop();
+        }
+    }
+
+    public void setIncomingFramePts(long incomingFramePts) {
+        mIncomingFramePts = incomingFramePts;
     }
 
     @Override
@@ -50,7 +66,7 @@ public class OffscreenTextureMovieEncoder extends TextureMovieEncoder implements
         surfaceTexture.updateTexImage();
         float[] transform = new float[16];      // TODO - avoid alloc every frame
         surfaceTexture.getTransformMatrix(transform);
-        long timestamp = surfaceTexture.getTimestamp();
+        long timestamp = mIncomingFramePts;// surfaceTexture.getTimestamp();
         if (timestamp == 0) {
             // Seeing this after device is toggled off/on with power button.  The
             // first frame back has a zero timestamp.
@@ -59,7 +75,7 @@ public class OffscreenTextureMovieEncoder extends TextureMovieEncoder implements
             // important that we just ignore the frame.
             return;
         }
-        handleFrameAvailable(transform, timestamp);
+        handleFrameAvailable(transform, timestamp * 1000);
     }
 
     public interface Callback {
@@ -67,5 +83,7 @@ public class OffscreenTextureMovieEncoder extends TextureMovieEncoder implements
          * @param pts in micro seconds
          */
         void onSwappedBuffer(long pts);
+
+        void onEncodeStop();
     }
 }

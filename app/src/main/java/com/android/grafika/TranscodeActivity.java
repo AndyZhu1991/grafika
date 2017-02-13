@@ -1,9 +1,12 @@
 package com.android.grafika;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.graphics.SurfaceTexture;
 import android.media.MediaMetadataRetriever;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.os.AsyncTaskCompat;
 import android.util.Log;
 import android.util.Pair;
 import android.view.Surface;
@@ -42,6 +45,8 @@ public class TranscodeActivity extends Activity implements View.OnClickListener,
     private MoviePlayer mMoviePlayer;
     private MoviePlayer.PlayTask mPlayTask;
 
+    private ProgressDialog mProgressDialog;
+
     private long mStartUsec;
     private long mEndUsec;
 
@@ -66,7 +71,7 @@ public class TranscodeActivity extends Activity implements View.OnClickListener,
     private void init() {
         mMovieEncoder = new OffscreenTextureMovieEncoder();
 
-        mMovieFiles = new ArrayList<>(Arrays.asList(MiscUtils.getFilesReal(getFilesDir(), "*.mp4")));
+        mMovieFiles = new ArrayList<>(Arrays.asList(MiscUtils.getFilesReal(getExternalCacheDir(), "*.mp4")));
         mMovieFiles.addAll(Arrays.asList(MiscUtils.getFilesReal(getExternalCacheDir(), "*.mp4")));
         mMovieNames = new ArrayList<>();
         for (File file: mMovieFiles) {
@@ -78,6 +83,9 @@ public class TranscodeActivity extends Activity implements View.OnClickListener,
         // Apply the adapter to the spinner.
         mSpinner.setAdapter(adapter);
         mSpinner.setOnItemSelectedListener(this);
+
+        mProgressDialog = new ProgressDialog(this);
+        mProgressDialog.setIndeterminate(true);
     }
 
     @Override
@@ -99,9 +107,11 @@ public class TranscodeActivity extends Activity implements View.OnClickListener,
             toast("Video file error!");
             return;
         }
+        getOutFile().delete();
+        getOutFileWithAudio().delete();
 
         mMovieEncoder.startRecording(new TextureMovieEncoder.EncoderConfig(
-                getOutFile(), size.first, size.second, 1000000, null));
+                getOutFile(), size.first / 2, size.second / 2, 1000000, null));
         mMovieEncoder.setCallback(this);
         SurfaceTexture surfaceTexture = mMovieEncoder.createSurfaceTexture();
         try {
@@ -116,6 +126,7 @@ public class TranscodeActivity extends Activity implements View.OnClickListener,
         mPlayTask.setStartTime(mStartUsec);
         mPlayTask.execute();
         mStartButton.setEnabled(false);
+        mProgressDialog.show();
     }
 
     private boolean checkCutRange() {
@@ -142,6 +153,10 @@ public class TranscodeActivity extends Activity implements View.OnClickListener,
 
     private File getOutFile() {
         return new File(getExternalCacheDir(), "transcode-test.mp4");
+    }
+
+    private File getOutFileWithAudio() {
+        return new File(getExternalCacheDir(), "transcode-test-with-audio.mp4");
     }
 
     private void toast(String string) {
@@ -174,7 +189,6 @@ public class TranscodeActivity extends Activity implements View.OnClickListener,
     public void playbackStopped() {
         mMovieEncoder.stopRecording();
         mStartButton.setEnabled(true);
-        toast("Complete!");
     }
 
     @Override
@@ -184,6 +198,29 @@ public class TranscodeActivity extends Activity implements View.OnClickListener,
             mCodecLock.notify();
         }
         Log.d(TAG, "Swapped buffer: " + pts);
+    }
+
+    @Override
+    public void onEncodeStop() {
+        AsyncTaskCompat.executeParallel(new AsyncTask<Object, Object, Object>() {
+            @Override
+            protected Object doInBackground(Object... params) {
+                try {
+                    Mp4Util.overrideAudio(getOutFile().getAbsolutePath(), mSelectedVideo,
+                            mStartUsec / 1000000.0, mEndUsec / 1000000.0,
+                            getOutFileWithAudio().getAbsolutePath());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Object o) {
+                toast("Complete!");
+                mProgressDialog.dismiss();
+            }
+        });
     }
 
     private boolean waitForEncode = false;
@@ -219,6 +256,7 @@ public class TranscodeActivity extends Activity implements View.OnClickListener,
                 waitForEncode = true;
             }
 
+            mMovieEncoder.setIncomingFramePts(presentationTimeUsec);
             return true;
         }
 
