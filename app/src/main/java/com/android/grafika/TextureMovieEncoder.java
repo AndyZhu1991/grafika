@@ -258,7 +258,7 @@ public class TextureMovieEncoder implements Runnable {
     /**
      * Handles encoder state change requests.  The handler is created on the encoder thread.
      */
-    static class EncoderHandler extends Handler {
+    protected static class EncoderHandler extends Handler {
         private WeakReference<TextureMovieEncoder> mWeakEncoder;
 
         public EncoderHandler(TextureMovieEncoder encoder) {

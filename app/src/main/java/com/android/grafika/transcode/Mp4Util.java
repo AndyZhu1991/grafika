@@ -2,7 +2,7 @@
  * Copyright (c) 2016. BiliBili Inc.
  */
 
-package com.android.grafika;
+package com.android.grafika.transcode;
 
 import com.coremedia.iso.IsoFile;
 import com.coremedia.iso.boxes.Box;
@@ -54,15 +54,17 @@ public class Mp4Util {
     }
 
 
-    public static void overrideAudio(String videoPath, String audioPath, double startTime,
+    public static void overrideAudio(List<String> videoPaths, String audioPath, double startTime,
                                      double endTime, String outMoviePath) throws IOException {
-        //setVideoBgm(videoPath, audioPath, outMoviePath, true);
-        Track videoTrack = null;
-        for (Track track: MovieCreator.build(videoPath).getTracks()) {
-            if (track.getHandler().equals(VIDEO_TRACK_HANDLER_KEY)) {
-                videoTrack = track;
+        List<Track> videoTracks = new ArrayList<>();
+        for (String videoPath: videoPaths) {
+            for (Track track : MovieCreator.build(videoPath).getTracks()) {
+                if (track.getHandler().equals(VIDEO_TRACK_HANDLER_KEY)) {
+                    videoTracks.add(track);
+                }
             }
         }
+        Track videoTrack = new AppendTrack(videoTracks.toArray(new Track[videoTracks.size()]));
 
         Track audioTrack = null;
         for (Track track: MovieCreator.build(audioPath).getTracks()) {
@@ -70,13 +72,14 @@ public class Mp4Util {
                 audioTrack = track;
             }
         }
-        if (audioTrack == null) {
-            return;
-        }
 
-        int[] samples = getClipSamples(audioTrack, startTime, endTime);
-        CroppedTrack croppedTrack = new CroppedTrack(audioTrack, samples[0], samples[1]);
-        saveTracks(outMoviePath, videoTrack, croppedTrack);
+        if (audioTrack == null) {
+            saveTracks(outMoviePath, videoTrack);
+        } else {
+            int[] samples = getClipSamples(audioTrack, startTime, endTime);
+            CroppedTrack croppedAudioTrack = new CroppedTrack(audioTrack, samples[0], samples[1]);
+            saveTracks(outMoviePath, videoTrack, croppedAudioTrack);
+        }
     }
 
     private static int[] getClipSamples(Track track, double startTime, double endTime) {

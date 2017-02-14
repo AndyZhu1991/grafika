@@ -1,12 +1,14 @@
-package com.android.grafika;
+package com.android.grafika.transcode;
 
 import android.graphics.SurfaceTexture;
+
+import com.android.grafika.TextureMovieEncoder;
 
 /**
  * Created by zhujinchang on 2017/2/10.
  */
 
-public class OffscreenTextureMovieEncoder extends TextureMovieEncoder implements SurfaceTexture.OnFrameAvailableListener {
+public class MovieTranscoder extends TextureMovieEncoder implements SurfaceTexture.OnFrameAvailableListener {
 
     private Callback mCallback;
 
@@ -22,7 +24,7 @@ public class OffscreenTextureMovieEncoder extends TextureMovieEncoder implements
                     int textureId = mFullScreen.createTextureObject();
                     mTextureId = textureId;
                     surfaceTexture[0] = new SurfaceTexture(textureId);
-                    surfaceTexture[0].setOnFrameAvailableListener(OffscreenTextureMovieEncoder.this);
+                    surfaceTexture[0].setOnFrameAvailableListener(MovieTranscoder.this);
                     synchronized (object) {
                         object.notify();
                     }
